@@ -1,0 +1,32 @@
+{
+  "name": "dsimages",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=test gulp test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.14.2",
+    "cloudinary": "^1.2.6",
+    "connect-multiparty": "^2.0.0",
+    "dotenv": "^1.2.0",
+    "express": "^4.13.3",
+    "http-status-codes": "^1.0.5",
+    "jugglingdb": "^1.0.2",
+    "jugglingdb-mongodb": "0.0.4-4",
+    "method-override": "^2.3.5",
+    "promised-jugglingdb": "^0.2.15",
+    "superagent": "^1.6.1"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-eslint": "^1.1.1",
+    "gulp-jasmine": "^2.2.1",
+    "gulp-plumber": "^1.0.1",
+    "gulp-watch": "^4.3.5"
+  }
+}
