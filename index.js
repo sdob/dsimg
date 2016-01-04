@@ -3,6 +3,7 @@ const cloudinary = require('cloudinary').v2;
 const cors = require('cors');
 const dotenv = require('dotenv');
 const express = require('express');
+const logger = require('morgan');
 const methodOverride = require('method-override');
 const path = require('path');
 
@@ -17,6 +18,7 @@ if (typeof(process.env.CLOUDINARY_URL) === 'undefined') {
 }
 
 const app = express();
+app.use(logger('dev'));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
