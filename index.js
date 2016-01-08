@@ -5,7 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const express = require('express');
 const logger = require('morgan');
-const multipart = require('multipart');
+const multipart = require('connect-multiparty');
 const methodOverride = require('method-override');
 const path = require('path');
 
@@ -31,27 +31,47 @@ const multipartMiddleware = multipart();
 const middleware = require('./middleware');
 const routes = require('./routes');
 
+// Connect to MongoDB
+const mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost:27017/dev');
+
 const router = express.Router();
 router.get(
   '/divesites/:id/',
   routes.getDivesiteImages
 );
 router.get(
+  '/divesites/:id/header',
+  routes.getDivesiteHeaderImage
+);
+router.get(
   '/users/:id/',
   routes.getUserImages
 );
+router.get(
+  '/users/:id/profile',
+  routes.getUserProfileImage
+);
 router.post(
-  '/divesites/:id/set_header_image/',
+  '/divesites/:id/header',
   middleware.evaluateAuthorizationHeader, // check for valid 'Authorization' header in request
   middleware.authenticate, // check that token maps to user
   middleware.checkDivesiteOwnership, // check that requesting user owns this (valid) divesite
   multipartMiddleware, // handle form data
   routes.setHeaderImage // set the divesite's header image
 );
+router.delete(
+  '/divesites/:id/header',
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate, // check that token maps to user
+  middleware.checkDivesiteOwnership, // check that requesting user owns this (valid) divesite
+  routes.deleteDivesiteHeaderImage
+);
 router.post(
+  '/set_profile_image/',
   middleware.evaluateAuthorizationHeader, // check for valid 'Authorization' header in request
   middleware.authenticate, // check that token maps to user
-  '/set_profile_image/',
+  multipartMiddleware,
   middleware.checkValidImage,
   routes.setProfileImage
 );

@@ -18,8 +18,7 @@ const setHeaderImage = require('../routes').setHeaderImage;
 const setProfileImage = require('../routes').setProfileImage;
 const uploadDivesiteImage = require('../routes').uploadDivesiteImage;
 
-//const DivesiteImage = require('../schema').models.DivesiteImage;
-const DivesiteImage = require('../DivesiteImage');
+const DivesiteImage = require('../models/DivesiteImage');
 const mongoose = require('mongoose');
 
 const multipartMiddleware = multipart();
@@ -57,6 +56,9 @@ describe('Routes', () => {
       app = express();
       app.use((req, res, next) => {
         res.locals.token = validToken;
+        res.locals.user = {
+          id: 10,
+        };
         next();
       });
       app.post('/:id', multipartMiddleware, middleware.checkValidImage, setHeaderImage);

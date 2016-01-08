@@ -7,7 +7,9 @@ const urlparse = require('url');
 
 const API_URL = process.env.DSAPI_URL;
 //const DivesiteImage = require('./schema').models.DivesiteImage;
-const DivesiteImage = require('./DivesiteImage');
+const DivesiteImage = require('./models/DivesiteImage');
+const DivesiteHeaderImage = require('./models/DivesiteHeaderImage');
+const ProfileImage = require('./models/ProfileImage');
 const utils = require('./utils');
 
 function getDivesiteImages(req, res) {
@@ -28,49 +30,73 @@ function getUserImages(req, res) {
   .catch((err) => res.status(err.status).json(err));
 }
 
+function getUserProfileImage(req, res) {
+  const userID = req.params.id;
+  utils.getUser(userID)
+  .then((user) => {
+    console.log(user);
+    return ProfileImage.findOne({userID: user.id});
+  })
+  .then((image) => {
+    console.log(image);
+    return res.json(image);
+  })
+  .catch((err) => res.status(err.status).json(err));
+}
+
+
+function getDivesiteHeaderImage(req, res) {
+  const divesiteID = req.params.id;
+  utils.getDivesite(divesiteID)
+  .then((divesite) => {
+    return DivesiteHeaderImage.findOne({divesiteID});
+  })
+  .then((image) => {
+    return res.json(image);
+  })
+  .catch((err) => res.json(err));
+}
+
 
 function setHeaderImage(req, res) {
   // req.files.image has already been checked by middleware
   const imageFile = req.files.image.path;
+  const divesiteID = req.params.id;
+  const userID = res.locals.user.id;
   const url = urlparse.resolve(API_URL, `/divesites/${req.params.id}/`);
   cloudinary.uploader.upload(imageFile)
   .then((image) => {
-    //console.log('**** photo uploaded; sending PATCH request to API server');
-    request.patch(url)
-    .set('Authorization', `Token ${res.locals.token}`) // Set authorization token
-    .send({'header_image_url': image.url}) // Send image URL
-    .end((err) => {
-      if (err) {
-        console.error('**** error in PATCH request');
-        return res.status(err.status).json(err);
-      }
-      //console.log('**** PATCH went OK');
-      return res.status(HTTP.OK).json({url: image.url});
+    return DivesiteHeaderImage.create({
+      image,
+      divesiteID,
+      userID,
     });
+  })
+  .then((image) => res.json(image))
+  .catch((err) => {
+    throw new Error(err);
   });
 }
-
 
 function setProfileImage(req, res) {
   const id = res.locals.user.id;
   const imageFile = req.files.image.path;
-  //console.log('**** uploading image to cloudinary');
+  let uploadedImage;
+  // Upload to Cloudinary
   cloudinary.uploader.upload(imageFile)
+  // If successful, then remove any existing profile image and
+  // insert this one into the database
   .then((image) => {
-    //console.log('**** photo uploaded; sending PATCH request to API server');
-    const url = urlparse.resolve(API_URL, `/users/${id}/`);
-    request.patch(url)
-    .set('Authorization', `Token ${res.locals.token}`)
-    .send({'profile_image_url': image.url})
-    .end((err) => {
-      if (err) {
-        console.error('**** error in PATCH request');
-        return res.sendStatus(err.status);
-      }
-      //console.log('PATCH went OK');
-      return res.status(HTTP.OK).json({url: image.url});
-    });
-  });
+    uploadedImage = image;
+    // TODO: delete Cloudinary resource as well
+    return ProfileImage.find({userID: id}).remove();
+  })
+  .then(() => {
+    return ProfileImage.create({userID: id, image: uploadedImage});
+  })
+  // Return the JSON in the response
+  .then(() => res.status(HTTP.OK).json({image: imageFile}))
+  .catch((err) => res.json(err));
 }
 
 
@@ -85,13 +111,7 @@ function uploadDivesiteImage(req, res) {
   .then(() => cloudinary.uploader.upload(imageFile))
   // Save the JSON from Cloudinary along with the divesite
   // and user ID
-  .then((image) => {
-    new DivesiteImage({
-      image,
-      divesiteID,
-      ownerID,
-    }).save();
-  })
+  .then((image) => DivesiteImage.create({ image, divesiteID, ownerID }))
   // Respond with the image data
   .then((image) => res.status(HTTP.CREATED).json(image))
   // Catch errors and respond with them
@@ -99,9 +119,32 @@ function uploadDivesiteImage(req, res) {
 }
 
 
+function deleteDivesiteHeaderImage(req, res) {
+  // res.locals.user should have been set and divesite ownership
+  // should have been established by middleware
+  const divesiteID = req.params.id;
+  DivesiteHeaderImage.findOne({divesiteID})
+  .then((result) => {
+    return cloudinary.uploader.destroy(result.image.public_id);
+  })
+  .then(() => {
+    return DivesiteHeaderImage.find({divesiteID}).remove();
+  })
+  .then(() => {
+    return res.sendStatus(HTTP.NO_CONTENT);
+  })
+  .then((undefined, err) => {
+    throw new Error(err);
+  });
+}
+
+
 module.exports = {
+  deleteDivesiteHeaderImage,
   getDivesiteImages,
+  getDivesiteHeaderImage,
   getUserImages,
+  getUserProfileImage,
   setHeaderImage,
   setProfileImage,
   uploadDivesiteImage,
