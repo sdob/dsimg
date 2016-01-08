@@ -1,25 +1,23 @@
+'use strict';
 /* eslint-env jasmine */
 /* eslint no-unused-vars:0 */
 const HTTP = require('http-status-codes');
 const authenticate = require('../middleware').authenticate;
 const checkDivesiteOwnership = require('../middleware').checkDivesiteOwnership;
 const evaluateAuthorizationHeader = require('../middleware').evaluateAuthorizationHeader;
+const checkValidImage = require('../middleware').checkValidImage;
 const dotenv = require('dotenv');
 const express = require('express');
+const multipart = require('connect-multiparty');
 const nock = require('nock');
 const request = require('supertest');
 
-(function () {
-  'use strict';
-  dotenv.load();
+const finish = require('./test-utils').finish;
+const multipartMiddleware = multipart();
 
-  function finish(done) {
-    return (err) => {
-      if (err) done.fail(err);
-      else done();
-    };
-  }
+dotenv.load();
 
+describe('Middleware', () => {
   describe('evaluateAuthorizationHeader()', () => {
     let app;
     const validToken = '1234567890abcdefghij'; // 20-char token
@@ -172,4 +170,30 @@ const request = require('supertest');
       });
     });
   });
-})();
+
+  describe('checkValidImage', () => {
+    let app;
+    beforeEach(() => {
+      app = express();
+      app.post('/', multipartMiddleware, checkValidImage, (req, res) => {
+        return res.status(HTTP.OK).json({message: 'ok'});
+      });
+    });
+
+    afterEach(() => {
+      nock.cleanAll();
+    });
+
+    it('should return 400 if no image is sent', (done) => {
+      request(app).post('/')
+      .expect(HTTP.BAD_REQUEST, finish(done));
+    });
+
+    it('should pass on to the next middleware function if sent a valid image', (done) => {
+      request(app).post('/')
+      .attach('image', './test/test.png', 'image')
+      .expect(HTTP.OK, finish(done));
+    });
+  });
+
+});
