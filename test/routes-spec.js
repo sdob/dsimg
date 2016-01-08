@@ -18,14 +18,25 @@ const setHeaderImage = require('../routes').setHeaderImage;
 const setProfileImage = require('../routes').setProfileImage;
 const uploadDivesiteImage = require('../routes').uploadDivesiteImage;
 
-const DivesiteImage = require('../schema').models.DivesiteImage;
+//const DivesiteImage = require('../schema').models.DivesiteImage;
+const DivesiteImage = require('../DivesiteImage');
+const mongoose = require('mongoose');
 
 const multipartMiddleware = multipart();
 const middleware = require('../middleware');
 
 const validToken = '1234567890abcdefghij'; // 20-char token
 const divesiteID = 20;
+
 describe('Routes', () => {
+
+  beforeAll((done) => {
+    mongoose.connect('mongodb://localhost:27017/test', done);
+  });
+
+  afterAll((done) => {
+    mongoose.disconnect(done);
+  });
 
   const ALL = new RegExp('.*');
   let scope;
@@ -145,17 +156,17 @@ describe('Routes', () => {
         },
       });
       // Clear the DB and create some new DivesiteImages
-      DivesiteImage.destroyAll()
-      .then(() => new DivesiteImage({
-          image: {},
-          divesiteID: siteID,
-          ownerID,
-        }).save())
-      .then(() => new DivesiteImage({
-          image: {},
-          divesiteID: 1 + siteID,
-          ownerID,
-        }).save())
+      DivesiteImage.remove()
+      .then(() => DivesiteImage.create({
+        image: {public_id: `divesite_${siteID}`},
+        divesiteID: siteID,
+        ownerID,
+      }))
+      .then(() => DivesiteImage.create({
+        image: {public_id: `divesite_${1 + siteID}`},
+        divesiteID: 1 + siteID,
+        ownerID,
+      }))
       .then(done);
     });
     it('should respond with 404 if the divesite parameter is invalid', (done) => {
@@ -180,7 +191,6 @@ describe('Routes', () => {
         expect(img).toBeDefined();
         expect(+img.ownerID).toEqual(ownerID);
         expect(+img.divesiteID).toEqual(divesiteID);
-        expect(Object.keys(img.image).length).toBe(0);
         finish(done)(err);
       });
     });
@@ -205,7 +215,7 @@ describe('Routes', () => {
         name: "Con Kiehn",
       });
       // Clear the DB and create some new DivesiteImages
-      DivesiteImage.destroyAll()
+      DivesiteImage.remove()
       .then(() => new DivesiteImage({
           image: {},
           divesiteID,

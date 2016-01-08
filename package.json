@@ -17,10 +17,8 @@
     "dotenv": "^1.2.0",
     "express": "^4.13.3",
     "http-status-codes": "^1.0.5",
-    "jugglingdb": "^1.0.2",
-    "jugglingdb-mongodb": "0.0.4-4",
     "method-override": "^2.3.5",
-    "promised-jugglingdb": "^0.2.15",
+    "mongoose": "^4.3.4",
     "superagent": "^1.6.1"
   },
   "devDependencies": {

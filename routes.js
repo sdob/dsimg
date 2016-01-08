@@ -6,14 +6,15 @@ const request = require('superagent');
 const urlparse = require('url');
 
 const API_URL = process.env.DSAPI_URL;
-const DivesiteImage = require('./schema').models.DivesiteImage;
+//const DivesiteImage = require('./schema').models.DivesiteImage;
+const DivesiteImage = require('./DivesiteImage');
 const utils = require('./utils');
 
 function getDivesiteImages(req, res) {
   const divesiteID = req.params.id;
   //console.log(`**** Looking for images for ${siteID}`);
   utils.getDivesite(divesiteID)
-  .then((divesite) => DivesiteImage.all({where: { divesiteID }}))
+  .then((divesite) => DivesiteImage.find({ divesiteID }))
   .then((images) => res.json(images))
   .catch((err) => res.status(err.status).json(err));
 }
@@ -22,7 +23,7 @@ function getDivesiteImages(req, res) {
 function getUserImages(req, res) {
   const userID = req.params.id;
   utils.getUser(userID)
-  .then((user) => DivesiteImage.all({where: { ownerID: userID }}))
+  .then((user) => DivesiteImage.find({ ownerID: userID }))
   .then((images) => res.json(images))
   .catch((err) => res.status(err.status).json(err));
 }
