@@ -1,3 +1,7 @@
 language: node_js
 node_js:
   - "4.1"
+services:
+  - mongodb
+before_script:
+  - echo -e "CLOUDINARY_URL=cloudinary://whatever/\nAPI_SERVER=http://localhost:8000" > .env

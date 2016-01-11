@@ -2,13 +2,12 @@
 /* eslint-env jasmine */
 /* eslint no-unused-vars:0 */
 const HTTP = require('http-status-codes');
-const dotenv = require('dotenv');
 const express = require('express');
 const multipart = require('connect-multiparty');
 const nock = require('nock');
 const request = require('supertest');
 
-const API_URL = process.env.DSAPI_URL;
+const API_URL = process.env.API_SERVER;
 const finish = require('./test-utils').finish;
 
 const routes = require('../routes');

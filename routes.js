@@ -5,7 +5,7 @@ const cloudinary = require('cloudinary').v2;
 const request = require('superagent');
 const urlparse = require('url');
 
-const API_URL = process.env.DSAPI_URL;
+const API_URL = process.env.API_SERVER;
 const DivesiteImage = require('./models/DivesiteImage');
 const DivesiteHeaderImage = require('./models/DivesiteHeaderImage');
 const ProfileImage = require('./models/ProfileImage');
