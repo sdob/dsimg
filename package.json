@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "node index.js",
     "test": "NODE_ENV=test gulp test"
   },
   "keywords": [],
@@ -28,5 +28,8 @@
     "gulp-jasmine": "^2.2.1",
     "nock": "^4.0.0",
     "supertest": "^1.1.0"
+  },
+  "engines": {
+    "node": "4.2.2"
   }
 }
