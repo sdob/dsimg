@@ -8,6 +8,7 @@ const logger = require('morgan');
 const multipart = require('connect-multiparty');
 const methodOverride = require('method-override');
 const path = require('path');
+const utils = require('./utils');
 
 // Load environment variables
 dotenv.load();
@@ -33,7 +34,8 @@ const routes = require('./routes');
 
 // Connect to MongoDB
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/dev');
+const mongoString = utils.generateMongoString();
+mongoose.connect(mongoString);
 
 const router = express.Router();
 router.get(
