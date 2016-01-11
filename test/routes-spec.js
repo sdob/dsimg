@@ -50,15 +50,76 @@ describe('Routes', () => {
     nock(API_URL).patch(ALL, ALL).reply(HTTP.OK);
   });
 
+  describe('deleteDivesiteImage', () => {
+    const divesiteID = 200;
+    const ownerID = 100;
+
+    let app;
+    let imageID;
+
+    beforeEach((done) => {
+      DivesiteImage.remove()
+      .then(() => DivesiteImage.create({image: {}, divesiteID: divesiteID, ownerID: ownerID}))
+      .then((image) => {
+        imageID = image._id;
+        done();
+      });
+    });
+
+    it(`should respond with 403 FORBIDDEN if the user doesn't own the image`, (done) => {
+      app = express();
+      app.use((req, res, next) => {
+        res.locals.user = { id: 1 + ownerID };
+        next();
+      });
+      app.delete('/images/:id', routes.deleteDivesiteImage);
+      request(app).delete(`/images/${imageID}`)
+      .expect(HTTP.FORBIDDEN, finish(done));
+    });
+
+    it(`should respond with 404 NOT FOUND if the image ID is invalid`, (done) => {
+      app = express();
+      app.delete('images/:id', routes.deleteDivesiteImage);
+      request(app).delete(`/images/${imageID + 1}`)
+      .expect(HTTP.NOT_FOUND, finish(done));
+    });
+
+    it(`should respond with 204 NO CONTENT if the user owns the image`, (done) => {
+      app = express();
+      app.use((req, res, next) => {
+        res.locals.user = { id: ownerID };
+        next();
+      });
+      app.delete('/images/:id', routes.deleteDivesiteImage);
+      request(app).delete(`/images/${imageID}`)
+      .expect(HTTP.NO_CONTENT, finish(done));
+    });
+
+    it(`should delete the image if the user owns it`, (done) => {
+      app = express();
+      app.use((req, res, next) => {
+        res.locals.user = { id: ownerID };
+        next();
+      });
+      app.delete('/images/:id', routes.deleteDivesiteImage);
+      request(app).delete(`/images/${imageID}`)
+      .expect(HTTP.NO_CONTENT)
+      .end((err, res) => {
+        DivesiteImage.findOne({_id: imageID}).then((result) => {
+          expect(result).toBe(null);
+          finish(done)(err);
+        });
+      });
+    });
+  });
+
   describe('setHeaderImage', () => {
     let app;
     beforeEach(() => {
       app = express();
       app.use((req, res, next) => {
         res.locals.token = validToken;
-        res.locals.user = {
-          id: 10,
-        };
+        res.locals.user = { id: 10, };
         next();
       });
       app.post('/:id', multipartMiddleware, middleware.checkValidImage, setHeaderImage);
@@ -219,15 +280,15 @@ describe('Routes', () => {
       // Clear the DB and create some new DivesiteImages
       DivesiteImage.remove()
       .then(() => new DivesiteImage({
-          image: {},
-          divesiteID,
-          ownerID: id,
-        }).save())
+        image: {},
+        divesiteID,
+        ownerID: id,
+      }).save())
       .then(() => new DivesiteImage({
-          image: {},
-          divesiteID,
-          ownerID: 1 + id,
-        }).save())
+        image: {},
+        divesiteID,
+        ownerID: 1 + id,
+      }).save())
       .then(done);
     });
 

@@ -83,6 +83,12 @@ router.post(
   middleware.checkValidImage,
   routes.uploadDivesiteImage
 );
+router.delete(
+  '/images/:id',
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate,
+  routes.deleteDivesiteImage
+);
 app.use('/', router);
 
 const server = app.listen(process.env.PORT || 9001, () => {

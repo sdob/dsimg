@@ -6,15 +6,33 @@ const request = require('superagent');
 const urlparse = require('url');
 
 const API_URL = process.env.DSAPI_URL;
-//const DivesiteImage = require('./schema').models.DivesiteImage;
 const DivesiteImage = require('./models/DivesiteImage');
 const DivesiteHeaderImage = require('./models/DivesiteHeaderImage');
 const ProfileImage = require('./models/ProfileImage');
 const utils = require('./utils');
 
+function deleteDivesiteImage(req, res) {
+  const imageID = req.params.id;
+  const userID = res.locals.user.id;
+  DivesiteImage.findOne({_id: imageID})
+  .then((image) => {
+    if (!image) {
+      return res.sendStatus(HTTP.NOT_FOUND);
+    }
+    if (image.ownerID != userID) {
+      console.log('**** not allowed');
+      return res.sendStatus(HTTP.FORBIDDEN);
+    } else {
+      DivesiteImage.remove({_id: imageID})
+      .then(() => {
+        return res.sendStatus(HTTP.NO_CONTENT);
+      });
+    }
+  });
+}
+
 function getDivesiteImages(req, res) {
   const divesiteID = req.params.id;
-  //console.log(`**** Looking for images for ${siteID}`);
   utils.getDivesite(divesiteID)
   .then((divesite) => DivesiteImage.find({ divesiteID }))
   .then((images) => res.json(images))
@@ -30,11 +48,11 @@ function getUserImages(req, res) {
   .catch((err) => res.status(err.status).json(err));
 }
 
+
 function getUserProfileImage(req, res) {
   const userID = req.params.id;
   utils.getUser(userID)
   .then((user) => {
-    console.log(user);
     return ProfileImage.findOne({userID: user.id});
   })
   .then((image) => {
@@ -78,6 +96,7 @@ function setHeaderImage(req, res) {
   });
 }
 
+
 function setProfileImage(req, res) {
   const id = res.locals.user.id;
   const imageFile = req.files.image.path;
@@ -109,8 +128,7 @@ function uploadDivesiteImage(req, res) {
   utils.getDivesite(divesiteID)
   // Upload the image
   .then(() => cloudinary.uploader.upload(imageFile))
-  // Save the JSON from Cloudinary along with the divesite
-  // and user ID
+  // Save the JSON from Cloudinary along with the divesite and user ID
   .then((image) => DivesiteImage.create({ image, divesiteID, ownerID }))
   // Respond with the image data
   .then((image) => res.status(HTTP.CREATED).json(image))
@@ -123,9 +141,14 @@ function deleteDivesiteHeaderImage(req, res) {
   // res.locals.user should have been set and divesite ownership
   // should have been established by middleware
   const divesiteID = req.params.id;
+  console.log('**** deleting');
   DivesiteHeaderImage.findOne({divesiteID})
   .then((result) => {
-    return cloudinary.uploader.destroy(result.image.public_id);
+    console.log(result);
+    // result *may* be null
+    if (result && result.image && result.image.public_id) {
+      return cloudinary.uploader.destroy(result.image.public_id);
+    }
   })
   .then(() => {
     return DivesiteHeaderImage.find({divesiteID}).remove();
@@ -140,6 +163,7 @@ function deleteDivesiteHeaderImage(req, res) {
 
 
 module.exports = {
+  deleteDivesiteImage,
   deleteDivesiteHeaderImage,
   getDivesiteImages,
   getDivesiteHeaderImage,
