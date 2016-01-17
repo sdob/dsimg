@@ -1,9 +1,9 @@
-const API_SERVER = process.env.API_SERVER;
 const dotenv = require('dotenv');
 const request = require('superagent');
 const urlparse = require('url');
 
 dotenv.load();
+const API_SERVER = process.env.API_SERVER;
 
 function apiRetrieve(prefix, id) {
   const url = urlparse.resolve(API_SERVER, `${prefix}/${id ? id + '/' : ''}`);
