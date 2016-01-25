@@ -30,67 +30,111 @@ app.use(express.static(path.join(__dirname, '/public')));
 
 const multipartMiddleware = multipart();
 const middleware = require('./middleware');
-const routes = require('./routes');
+const routes = require('./routes')(cloudinary); // we need to pass in the cloudinary object
 
 // Connect to MongoDB
 const mongoose = require('mongoose');
 const mongoString = utils.generateMongoString();
 mongoose.connect(mongoString);
 
+const paths = require('./paths');
+
 const router = express.Router();
+
+/* 
+ * DivesiteImage routes
+ */
+
+// Retrieve divesite images
 router.get(
-  '/divesites/:id/',
-  routes.getDivesiteImages
+  paths.divesiteImage.list,
+  routes.divesiteImage.list
 );
-router.get(
-  '/divesites/:id/header',
-  routes.getDivesiteHeaderImage
-);
-router.get(
-  '/users/:id/',
-  routes.getUserImages
-);
-router.get(
-  '/users/:id/profile',
-  routes.getUserProfileImage
-);
+
+// Add divesite image
 router.post(
-  '/divesites/:id/header',
+  paths.divesiteImage.create,
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate,
+  multipartMiddleware,
+  middleware.checkValidImage,
+  routes.divesiteImage.create
+);
+
+// Delete divesite image
+router.delete(
+  paths.divesiteImage.delete,
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate,
+  routes.divesiteImage.delete
+);
+
+/*
+ * DivesiteHeaderImage routes
+ */
+
+// Retrieve divesite header image
+router.get(
+  paths.divesiteHeaderImage.retrieve,
+  routes.divesiteHeaderImage.retrieve
+);
+
+// Create/update divesite header image
+router.post(
+  paths.divesiteHeaderImage.create,
   middleware.evaluateAuthorizationHeader, // check for valid 'Authorization' header in request
   middleware.authenticate, // check that token maps to user
   middleware.checkDivesiteOwnership, // check that requesting user owns this (valid) divesite
   multipartMiddleware, // handle form data
-  routes.setHeaderImage // set the divesite's header image
+  routes.divesiteHeaderImage.create
 );
+
+// Delete divesite header image
 router.delete(
-  '/divesites/:id/header',
+  paths.divesiteHeaderImage.delete,
   middleware.evaluateAuthorizationHeader,
   middleware.authenticate, // check that token maps to user
   middleware.checkDivesiteOwnership, // check that requesting user owns this (valid) divesite
-  routes.deleteDivesiteHeaderImage
+  routes.divesiteHeaderImage.delete
 );
+
+/* 
+ * User image routes
+ */
+router.get(
+  paths.userImage.list,
+  routes.userImage.list
+);
+
+/* 
+ * User profile image routes 
+ */
+
+// Retrieve user profile image
+router.get(
+  paths.userProfileImage.retrieve,
+  routes.userProfileImage.retrieve
+);
+
+// Create/update user profile image
 router.post(
-  '/set_profile_image/',
+  paths.userProfileImage.create,
   middleware.evaluateAuthorizationHeader, // check for valid 'Authorization' header in request
   middleware.authenticate, // check that token maps to user
   multipartMiddleware,
   middleware.checkValidImage,
-  routes.setProfileImage
+  routes.userProfileImage.create
+  //routes.setProfileImage
 );
-router.post(
-  '/divesites/:id/',
-  middleware.evaluateAuthorizationHeader,
-  middleware.authenticate,
-  multipartMiddleware,
-  middleware.checkValidImage,
-  routes.uploadDivesiteImage
-);
+
+// Delete user profile image
 router.delete(
-  '/images/:id',
+  paths.userProfileImage.delete,
   middleware.evaluateAuthorizationHeader,
   middleware.authenticate,
-  routes.deleteDivesiteImage
+  routes.userProfileImage.delete
 );
+
 app.use('/', router);
 
 const server = app.listen(process.env.PORT || 9001, () => {

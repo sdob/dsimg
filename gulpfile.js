@@ -14,7 +14,10 @@ gulp.task('lint', () => {
 });
 gulp.task('test', ['lint'], () => {
   return gulp.src('test/**/*.js')
-  .pipe(jasmine({verbose: true}));
+  .pipe(jasmine({
+    includeStackTrace: false,
+    verbose: true,
+  }));
 });
 gulp.task('watch', () => {
   gulp.watch(paths, ['test']);
