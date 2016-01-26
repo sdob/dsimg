@@ -5,3 +5,5 @@ services:
   - mongodb
 before_script:
   - echo -e "CLOUDINARY_URL=cloudinary://whatever/\nAPI_SERVER=http://localhost:8000" > .env
+after_success:
+  - cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js

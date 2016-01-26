@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "NODE_ENV=test gulp test"
+    "test": "NODE_ENV=test istanbul cover --include-all-sources gulp test"
   },
   "keywords": [],
   "author": "",
@@ -24,9 +24,11 @@
     "superagent": "^1.6.1"
   },
   "devDependencies": {
+    "coveralls": "^2.11.6",
     "gulp": "^3.9.0",
     "gulp-eslint": "^1.1.1",
     "gulp-jasmine": "^2.2.1",
+    "istanbul": "^0.4.2",
     "nock": "^4.0.0",
     "supertest": "^1.1.0"
   },
