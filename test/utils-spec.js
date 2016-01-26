@@ -35,6 +35,38 @@ describe('Utility functions', () => {
     });
   });
 
+  describe('generateMongoString', () => {
+    beforeAll(() => {
+      delete  process.env.MONGODB_USERNAME;
+      delete  process.env.MONGODB_PASSWORD;
+      delete  process.env.MONGODB_HOST;
+      delete  process.env.MONGODB_PORT;
+      delete  process.env.MONGODB_DBNAME;
+    });
+    beforeEach(() => {
+    });
+    afterEach(() => {
+      delete  process.env.MONGODB_USERNAME;
+      delete  process.env.MONGODB_PASSWORD;
+      delete  process.env.MONGODB_HOST;
+      delete  process.env.MONGODB_PORT;
+      delete  process.env.MONGODB_DBNAME;
+    });
+    it('should concatenate a MongoDB connection string if given all env variables', () => {
+      process.env.MONGODB_USERNAME = 'user';
+      process.env.MONGODB_PASSWORD = 'password';
+      process.env.MONGODB_HOST = 'example.com';
+      process.env.MONGODB_PORT = 27017;
+      process.env.MONGODB_DBNAME = 'database';
+      const connString = utils.generateMongoString();
+      expect(connString).toEqual('mongodb://user:password@example.com:27017/database');
+    });
+    it('should generate a development-safe connection string by default', () => {
+      const connString = utils.generateMongoString();
+      expect(connString).toEqual('mongodb://localhost:27017/dev');
+    });
+  });
+
   describe('getDivesite(id)', () => {
 
     it('should contact the API server', (done) => {
@@ -60,10 +92,6 @@ describe('Utility functions', () => {
         done(err);
       });
     });
-  });
-
-  describe('listDivesites()', () => {
-
   });
 
   describe('getUser(id)', () => {

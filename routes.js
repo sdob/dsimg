@@ -31,7 +31,9 @@ module.exports = (cloudinary) => {
       retrieve: getUserProfileImage,
       delete: deleteUserProfileImage,
     },
-    getUserImages,
+    userImage: {
+      list: getUserImages,
+    },
   };
 
   /* Upload, retrieve a list of, and delete a divesite image */
@@ -51,11 +53,9 @@ module.exports = (cloudinary) => {
         return res.json(images);
       },
       (err) => {
-        console.log(`some kind of error`);
-        console.log(err);
-        res.status(err.status).json(err);
+        // Return a generic HTTP 500
+        res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
       });
-      //.catch((err) => res.status(err.status).json(err));
   }
 
   function uploadDivesiteImage(req, res) {
@@ -162,8 +162,7 @@ module.exports = (cloudinary) => {
     // Return the JSON in the response
     .then((result) => res.status(HTTP.OK).json(result))
     .catch((err) => {
-      console.log(`i'm in an error block!!!!!`);
-      res.json(err);
+      return res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
     });
   }
 
@@ -176,16 +175,20 @@ module.exports = (cloudinary) => {
       }
       return res.json(image);
     }, (err) => {
-      throw new Error(err);
+      return res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
     });
   }
 
   function getUserImages(req, res) {
     const userID = req.params.id;
-    utils.getUser(userID)
-    .then((user) => DivesiteImage.find({ ownerID: userID }))
-    .then((images) => res.json(images))
-    .catch((err) => res.status(err.status).json(err));
+    DivesiteImage.find({ ownerID: userID })
+    .then(
+      (images) => {
+        return res.json(images);
+      },
+      (err) => {
+        return res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
+      });
   }
 
   function retrieveDivesiteHeaderImage(req, res) {
@@ -269,6 +272,4 @@ module.exports = (cloudinary) => {
       throw new Error(err);
     });
   }
-
-
 };

@@ -1,0 +1,3 @@
+excludes: 
+ - index.js
+ - gulpfile.js

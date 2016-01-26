@@ -18,7 +18,7 @@ const DivesiteHeaderImage = require('../models/DivesiteHeaderImage');
 const ProfileImage = require('../models/ProfileImage');
 
 const paths = require('../paths');
-  const ALL = new RegExp('.*');
+const ALL = new RegExp('.*');
 
 const cloudinaryMock = {
   // Mock Cloudinary API
@@ -634,6 +634,53 @@ describe('Routes', () => {
         });
       });
     }); // deleteUserProfileImage
-  });
+  }); // userProfileImage
+
+  describe('userImage', () => {
+    const divesiteID = 10;
+    const ownerID = 20;
+    describe('list()', () => {
+      let app;
+      beforeEach((done) => {
+        app = express();
+        app.get(paths.userImage.list, routes.userImage.list);
+        DivesiteImage.create({
+          image: {public_id: 'public_id'},
+          divesiteID,
+          ownerID,
+        })
+        .then(() => DivesiteImage.create({
+          image: {public_id: 'public_id'},
+          divesiteID,
+          ownerID: ownerID + 1,
+        }))
+        .then(done);
+      });
+      it('should respond with HTTP 200 if there are images to return', (done) => {
+        request(app)
+        .get(`/users/${ownerID}/images`)
+        .expect(HTTP.OK, finish(done));
+      });
+      it('should respond with HTTP 200 if there are no images to return', (done) => {
+        request(app)
+        .get(`/users/${ownerID - 1}/images`)
+        .expect(HTTP.OK, finish(done));
+      });
+      it('should return a list of images', (done) => {
+        request(app)
+        .get(`/users/${ownerID}/images`)
+        .end((err, res) => {
+          expect(res.body.length).toBeDefined();
+          expect(res.body.length).toBe(1);
+          res.body.forEach((record) => {
+            expect(record.divesiteID).toBeDefined();
+            expect(record.image).toBeDefined();
+            expect(+record.ownerID).toEqual(ownerID);
+          });
+          finish(done)(err);
+        });
+      });
+    }); // userImage.list
+  }); // userImage
 
 });

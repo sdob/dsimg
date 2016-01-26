@@ -34,13 +34,8 @@ function getUser(id) {
   return apiRetrieve('users', id);
 }
 
-function listDivesites() {
-  return apiRetrieve('divesites');
-}
-
 module.exports = {
   generateMongoString,
   getDivesite,
   getUser,
-  listDivesites,
 };
