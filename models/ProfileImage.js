@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 
 const ProfileImageSchema = mongoose.Schema({
+  createdAt: {type: Date, default: Date.now },
   userID: String,
   image: {
     url: String,

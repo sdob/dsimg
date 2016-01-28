@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 
 const DivesiteHeaderImageSchema = mongoose.Schema({
+  createdAt: {type: Date, default: Date.now },
   divesiteID: String,
   ownerID: String,
   image: {
