@@ -154,9 +154,11 @@ module.exports = (cloudinary) => {
       }
     })
     .then(() => {
-      return ProfileImage.findOneAndRemove({ userID: id });
+      // Remove any profile images associated with this user
+      return ProfileImage.remove({ userID: id });
     })
     .then(() => {
+      // Create a new image
       return ProfileImage.create({userID: id, image: uploadedImage});
     })
     // Return the JSON in the response
