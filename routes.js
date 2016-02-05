@@ -11,8 +11,8 @@ const DivesiteHeaderImage = require('./models/DivesiteHeaderImage');
 const ProfileImage = require('./models/ProfileImage');
 const utils = require('./utils');
 
-/* Requires that you invoke it as a function with a 'cloudinary' object.
- * This is so that we can trivially mock the external API.
+/* Requires that you import then invoke with a 'cloudinary' argument.
+ * This is so that we can trivially mock the Cloudinary API in testing.
  */
 module.exports = (cloudinary) => {
   return {
