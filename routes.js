@@ -47,8 +47,10 @@ module.exports = (cloudinary) => {
     .then(
       (images) => {
         if (!images.length) {
-          // Empty list from Mongo
-          return res.status(HTTP.NOT_FOUND).json([]);
+          // Empty list from Mongo. Because our client will try to retrieve
+          // images for every divesite, there's not necessarily a client error
+          // here: it could be a valid divesite with no images for it.
+          return res.status(HTTP.NO_CONTENT).json([]);
         }
         return res.json(images);
       },
@@ -173,7 +175,10 @@ module.exports = (cloudinary) => {
     ProfileImage.findOne({userID})
     .then((image) => {
       if (!image) {
-        return res.sendStatus(HTTP.NOT_FOUND);
+        // Send a 204 instead of a 404; this might be a completely
+        // valid user ID, and we're not going to make the round-trip
+        // to DSAPI to check so it might not be a client error.
+        return res.sendStatus(HTTP.NO_CONTENT);
       }
       return res.json(image);
     }, (err) => {
@@ -199,7 +204,10 @@ module.exports = (cloudinary) => {
     .then(
       (image) => {
         if (!image) {
-          return res.sendStatus(HTTP.NOT_FOUND);
+          // Send a 204 instead of a 404; this could be a perfectly valid
+          // site ID but just not have any image associated with it. In
+          // other words, it's not a client error to ask for it.
+          return res.sendStatus(HTTP.NO_CONTENT);
         }
         return res.json(image);
       },

@@ -151,10 +151,10 @@ describe('Routes', () => {
         DivesiteImage.remove(done);
       });
 
-      it('should respond with 404 if the divesite parameter is invalid', (done) => {
+      it('should respond with 204 if the divesite parameter is invalid', (done) => {
         request(app)
         .get(`/divesites/${2 + divesiteID}`) // Nothing here
-        .expect(HTTP.NOT_FOUND, finish(done));
+        .expect(HTTP.NO_CONTENT, finish(done));
       });
 
       it('should respond with 200 and a list of the expected length if the divesite parameter is valid', (done) => {
@@ -252,10 +252,10 @@ describe('Routes', () => {
         app.get('/divesites/:id/header', routes.divesiteHeaderImage.retrieve);
       });
       describe('with no header image in the database', () => {
-        it('should respond with 404', (done) => {
+        it('should respond with 204', (done) => {
           request(app)
           .get('/divesites/1/header')
-          .expect(HTTP.NOT_FOUND, finish(done));
+          .expect(HTTP.NO_CONTENT, finish(done));
         });
       });
       describe('with a header image in the database', () => {
@@ -465,10 +465,10 @@ describe('Routes', () => {
           finish(done)(err);
         });
       });
-      it(`should respond with 404 if there's no image in the database`, (done) => {
+      it(`should respond with 204 if there's no image in the database`, (done) => {
         request(app)
         .get(`/users/${1+userID}/profile`)
-        .expect(HTTP.NOT_FOUND)
+        .expect(HTTP.NO_CONTENT)
         .end((err, res) => {
           finish(done)(err);
         });
