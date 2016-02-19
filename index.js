@@ -93,12 +93,28 @@ router.post(
   routes.slipwayImage.create
 );
 
+// Delete compressor image
+router.delete(
+  paths.compressorImage.delete,
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate,
+  routes.compressorImage.delete
+);
+
 // Delete divesite image
 router.delete(
   paths.divesiteImage.delete,
   middleware.evaluateAuthorizationHeader,
   middleware.authenticate,
   routes.divesiteImage.delete
+);
+
+// Delete slipway image
+router.delete(
+  paths.slipwayImage.delete,
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate,
+  routes.slipwayImage.delete
 );
 
 /*
