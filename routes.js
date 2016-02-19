@@ -6,9 +6,11 @@ const request = require('superagent');
 const urlparse = require('url');
 
 const API_URL = process.env.API_SERVER;
+const CompressorImage = require('./models/CompressorImage');
 const DivesiteImage = require('./models/DivesiteImage');
 const DivesiteHeaderImage = require('./models/DivesiteHeaderImage');
 const ProfileImage = require('./models/ProfileImage');
+const SlipwayImage = require('./models/SlipwayImage');
 const utils = require('./utils');
 
 /* Requires that you import then invoke with a 'cloudinary' argument.
@@ -16,6 +18,11 @@ const utils = require('./utils');
  */
 module.exports = (cloudinary) => {
   return {
+    compressorImage: {
+      list: getCompressorImages,
+      delete: deleteCompressorImage,
+      create: uploadCompressorImage,
+    },
     divesiteImage: {
       list: getDivesiteImages,
       delete: deleteDivesiteImage,
@@ -25,6 +32,11 @@ module.exports = (cloudinary) => {
       create: setDivesiteHeaderImage,
       retrieve: retrieveDivesiteHeaderImage,
       delete: deleteDivesiteHeaderImage,
+    },
+    slipwayImage: {
+      create: uploadSlipwayImage,
+      list: getSlipwayImages,
+      delete: deleteSlipwayImage,
     },
     userProfileImage: {
       create: setUserProfileImage,
@@ -37,6 +49,28 @@ module.exports = (cloudinary) => {
   };
 
   /* Upload, retrieve a list of, and delete a divesite image */
+
+  function getCompressorImages(req, res) {
+    // When retrieving compressors, we don't need to perform ID validation,
+    // because we're relying on the upload route to validate that a compressor
+    // exists.
+    const compressorID = req.params.id;
+    CompressorImage.find({ compressorID })
+    .then(
+      (images) => {
+        if (!images.length) {
+          // Empty list from Mongo. Because our client will try to retrieve
+          // images for every compressor, there's not necessarily a client error
+          // here: it could be a valid compressor with no images for it.
+          return res.status(HTTP.NO_CONTENT).json([]);
+        }
+        return res.json(images);
+      },
+      (err) => {
+        // Return a generic HTTP 500
+        res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
+      });
+  }
 
   function getDivesiteImages(req, res) {
     // When retrieving divesites, we don't need to perform ID validation,
@@ -58,6 +92,51 @@ module.exports = (cloudinary) => {
         // Return a generic HTTP 500
         res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
       });
+  }
+
+  function getSlipwayImages(req, res) {
+    // When retrieving slipways, we don't need to perform ID validation,
+    // because we're relying on the upload route to validate that a slipway
+    // exists.
+    const slipwayID = req.params.id;
+    SlipwayImage.find({ slipwayID })
+    .then(
+      (images) => {
+        if (!images.length) {
+          // Empty list from Mongo. Because our client will try to retrieve
+          // images for every slipway, there's not necessarily a client error
+          // here: it could be a valid slipway with no images for it.
+          return res.status(HTTP.NO_CONTENT).json([]);
+        }
+        return res.json(images);
+      },
+      (err) => {
+        // Return a generic HTTP 500
+        res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
+      });
+  }
+
+  function uploadCompressorImage(req, res) {
+    // These are set by earlier middleware functions
+    const imageFile = req.files.image.path;
+    const compressorID = req.params.id;
+    const ownerID = res.locals.user.id;
+    // Check that the compressor ID is valid (requires DSAPI call)
+    utils.getCompressor(compressorID)
+    // Upload the image
+    .then(() => {
+      return cloudinary.uploader.upload(imageFile);
+    })
+    // Save the JSON from Cloudinary along with the compressor and user ID
+    .then((image) => {
+      return CompressorImage.create({ image, compressorID, ownerID });
+    })
+    // Respond with the image data
+    .then((image) => {
+      return res.status(HTTP.CREATED).json(image);
+    })
+    // Catch errors and respond with them
+    .catch((err) => res.status(err.status).json(err));
   }
 
   function uploadDivesiteImage(req, res) {
@@ -83,6 +162,57 @@ module.exports = (cloudinary) => {
     .catch((err) => res.status(err.status).json(err));
   }
 
+  function uploadSlipwayImage(req, res) {
+    // These are set by earlier middleware functions
+    const imageFile = req.files.image.path;
+    const slipwayID = req.params.id;
+    const ownerID = res.locals.user.id;
+    // Check that the slipway ID is valid (requires DSAPI call)
+    utils.getSlipway(slipwayID)
+    .then(() => {
+      return cloudinary.uploader.upload(imageFile);
+    })
+    // Save the JSON from Cloudinary along with the slipway and user ID
+    .then((image) => {
+      return SlipwayImage.create({ image, slipwayID, ownerID });
+    })
+    // Respond with the image data
+    .then((image) => {
+      return res.status(HTTP.CREATED).json(image);
+    })
+    // Catch errors and respond with them
+    .catch((err) => res.status(err.status).json(err));
+  }
+
+  function deleteCompressorImage(req, res) {
+    // When deleting an image, we don't need to perform compressor ID validation;
+    // we're relying on the uploader to validate that a compressor exists.
+    // (This also allows us to delete compressor images *after* a compressor has
+    // been removed from DSAPI.)
+    const imageID = req.params.id;
+    const userID = res.locals.user.id;
+    let publicId;
+    CompressorImage.findOne({_id: imageID})
+    .then((image) => {
+      if (!image) {
+        // We didn't find anything in the database
+        return res.sendStatus(HTTP.NOT_FOUND);
+      }
+      if (image.ownerID != userID) {
+        // The image exists, but the user making the request doesn't own it
+        return res.sendStatus(HTTP.FORBIDDEN);
+      } else {
+        // The image exists, and the user owns it
+        publicId = image.image.public_id;
+        CompressorImage.remove({_id: imageID})
+        .then(() => cloudinary.uploader.destroy(publicId))
+        .then((result) => {
+          return res.status(HTTP.NO_CONTENT).json(result);
+        });
+      }
+    });
+  }
+
   function deleteDivesiteImage(req, res) {
     // When deleting an image, we don't need to perform divesite ID validation;
     // we're relying on the uploader to validate that a divesite exists.
@@ -104,6 +234,35 @@ module.exports = (cloudinary) => {
         // The image exists, and the user owns it
         publicId = image.image.public_id;
         DivesiteImage.remove({_id: imageID})
+        .then(() => cloudinary.uploader.destroy(publicId))
+        .then((result) => {
+          return res.status(HTTP.NO_CONTENT).json(result);
+        });
+      }
+    });
+  }
+
+  function deleteSlipwayImage(req, res) {
+    // When deleting an image, we don't need to perform slipway ID validation;
+    // we're relying on the uploader to validate that a slipway exists.
+    // (This also allows us to delete slipway images *after* a slipway has
+    // been removed from DSAPI.)
+    const imageID = req.params.id;
+    const userID = res.locals.user.id;
+    let publicId;
+    SlipwayImage.findOne({_id: imageID})
+    .then((image) => {
+      if (!image) {
+        // We didn't find anything in the database
+        return res.sendStatus(HTTP.NOT_FOUND);
+      }
+      if (image.ownerID != userID) {
+        // The image exists, but the user making the request doesn't own it
+        return res.sendStatus(HTTP.FORBIDDEN);
+      } else {
+        // The image exists, and the user owns it
+        publicId = image.image.public_id;
+        SlipwayImage.remove({_id: imageID})
         .then(() => cloudinary.uploader.destroy(publicId))
         .then((result) => {
           return res.status(HTTP.NO_CONTENT).json(result);
@@ -138,6 +297,10 @@ module.exports = (cloudinary) => {
     const imageFile = req.files.image.path;
     let uploadedImage;
     let oldProfileImageID;
+
+    const uploaded = cloudinary.uploader.upload(imageFile);
+    const oldImage = ProfileImage.findOne({userID: id});
+
     // Upload to Cloudinary
     cloudinary.uploader.upload(imageFile)
     // If successful, then remove any existing profile image and
@@ -145,7 +308,8 @@ module.exports = (cloudinary) => {
     .then((image) => {
       if (image) {
         uploadedImage = image;
-        // TODO: delete Cloudinary resource as well
+        // Delete the Cloudinary resource here as well so that we don't
+        // have to wait for the round-trip.
         return ProfileImage.findOne({userID: id});
       }
     })
@@ -188,10 +352,25 @@ module.exports = (cloudinary) => {
 
   function getUserImages(req, res) {
     const userID = req.params.id;
+    let allImages = [];
     DivesiteImage.find({ ownerID: userID })
     .then(
       (images) => {
-        return res.json(images);
+        Array.prototype.push.apply(allImages, images);
+        //return res.json(images);
+        CompressorImage.find({ ownerID: userID })
+        .then((images) => {
+          Array.prototype.push.apply(allImages, images);
+          return SlipwayImage.find({ ownerID: userID })
+        })
+        .then((images) => {
+          Array.prototype.push.apply(allImages, images);
+          // Sort the images by date
+          allImages.sort((a, b) => {
+            return new Date(a.createdAt) - new Date(b.createdAt);
+          });
+          return res.json(allImages);
+        });
       },
       (err) => {
         return res.status(HTTP.INTERNAL_SERVER_ERROR).json(err);
@@ -216,7 +395,6 @@ module.exports = (cloudinary) => {
       }
     );
   }
-
 
   function setDivesiteHeaderImage(req, res) {
     // req.files.image has already been checked by middleware

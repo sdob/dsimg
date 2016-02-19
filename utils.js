@@ -26,8 +26,16 @@ function generateMongoString() {
   return `mongodb://${authCredentials}${host}:${port}/${dbname}`;
 }
 
+function getCompressor(id) {
+  return apiRetrieve('compressors', id);
+}
+
 function getDivesite(id) {
   return apiRetrieve('divesites', id);
+}
+
+function getSlipway(id) {
+  return apiRetrieve('slipways', id);
 }
 
 function getUser(id) {
@@ -36,6 +44,8 @@ function getUser(id) {
 
 module.exports = {
   generateMongoString,
+  getCompressor,
   getDivesite,
+  getSlipway,
   getUser,
 };

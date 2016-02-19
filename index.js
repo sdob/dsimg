@@ -45,10 +45,32 @@ const router = express.Router();
  * DivesiteImage routes
  */
 
+// Retrieve compressor images
+router.get(
+  paths.compressorImage.list,
+  routes.compressorImage.list
+);
+
 // Retrieve divesite images
 router.get(
   paths.divesiteImage.list,
   routes.divesiteImage.list
+);
+
+// Retrieve slipway images
+router.get(
+  paths.slipwayImage.list,
+  routes.slipwayImage.list
+);
+
+// Add compressor image
+router.post(
+  paths.compressorImage.create,
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate,
+  multipartMiddleware,
+  middleware.checkValidImage,
+  routes.compressorImage.create
 );
 
 // Add divesite image
@@ -59,6 +81,16 @@ router.post(
   multipartMiddleware,
   middleware.checkValidImage,
   routes.divesiteImage.create
+);
+
+// Add slipway image
+router.post(
+  paths.slipwayImage.create,
+  middleware.evaluateAuthorizationHeader,
+  middleware.authenticate,
+  multipartMiddleware,
+  middleware.checkValidImage,
+  routes.slipwayImage.create
 );
 
 // Delete divesite image
